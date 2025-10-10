@@ -14,7 +14,7 @@ import {
   USER_ID,
   createTodo,
   deleteTodo,
-  updateTodo
+  updateTodo,
 } from './api/todos';
 
 import { TodoItem } from './TodoItem';
@@ -27,7 +27,7 @@ export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [filter, setFilter] = useState<Filter>('All');
+  const [filter, setFilter] = useState<Filter>(FilterType.All);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
   const [processingTodos, setProcessingTodos] = useState<number[]>([]);
   const newTodoFieldRef = useRef<HTMLInputElement>(null);

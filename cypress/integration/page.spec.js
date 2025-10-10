@@ -979,7 +979,7 @@ describe('', () => {
     });
   });
 
-  describe.skip('Todo Toggling', () => {
+  describe('Todo Toggling', () => {
     beforeEach(() => {
       page.mockLoad().as('loadRequest');
       page.visit();

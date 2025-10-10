@@ -1,3 +1,4 @@
+import classNames from 'classnames';
 import React from 'react';
 
 type Props = {
@@ -14,7 +15,7 @@ export const ToggleAllButton: React.FC<Props> = ({
   return (
     <button
       type="button"
-      className={`todoapp__toggle-all${isAllCompleted ? ' active' : ''}`}
+      className={classNames('todoapp__toggle-all', { active: isAllCompleted })}
       data-cy="ToggleAllButton"
       onClick={onToggleAll}
       disabled={todosCount === 0}

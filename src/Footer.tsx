@@ -1,5 +1,6 @@
 import React from 'react';
-import { Filter } from './types/Todo';
+import { Filter, FilterType } from './types/Todo';
+import classNames from 'classnames';
 
 type Props = {
   activeTodosCount: number;
@@ -16,7 +17,7 @@ export const Footer: React.FC<Props> = ({
   onClearCompleted,
   hasCompletedTodos,
 }) => {
-  const filters: Filter[] = ['All', 'Active', 'Completed'];
+  const filters: Filter[] = Object.values(FilterType);
 
   const handleClearCompleted = () => {
     onClearCompleted();
@@ -33,7 +34,9 @@ export const Footer: React.FC<Props> = ({
           <a
             key={filterName}
             href={`#/${filterName.toLowerCase()}`}
-            className={`filter__link ${currentFilter === filterName ? 'selected' : ''}`}
+            className={classNames('filter__link', {
+              selected: currentFilter === filterName,
+            })}
             data-cy={`FilterLink${filterName}`}
             onClick={() => onFilterChange(filterName)}
           >

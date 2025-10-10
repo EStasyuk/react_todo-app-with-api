@@ -21,11 +21,6 @@ export const NewTodoForm: React.FC<Props> = ({
     if (success) {
       setTitle('');
     }
-    // if (title.trim()) {
-    //   onCreate(title.trim())
-    //     .then(() => setTitle(''))
-    //     .catch(e => console.error(e));
-    // }
   };
 
   return (
