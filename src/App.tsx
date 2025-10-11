@@ -308,61 +308,66 @@ export const App: React.FC = () => {
     return <UserWarning />;
   }
 
-  if (loading && todos.length === 0) {
-    return <div className="loader">Loading todos...</div>;
-  }
-
   return (
     <div className="todoapp">
       <h1 className="todoapp__title">todos</h1>
 
       <div className="todoapp__content">
-        <header className="todoapp__header">
-          <ToggleAllButton
-            isAllCompleted={isAllCompleted}
-            todosCount={todos.length}
-            onToggleAll={handleToggleAll}
-          />
-          <NewTodoForm
-            onCreate={handleAddTodo}
-            fieldRef={newTodoFieldRef}
-            disabled={processingTodos.includes(0)}
-          />
-        </header>
+        {loading && todos.length === 0 ? (
+          <div className="loader">Loading todos...</div>
+        ) : (
+          <>
+            <header className="todoapp__header">
+              {todos.length > 0 && (
+                <ToggleAllButton
+                  isAllCompleted={isAllCompleted}
+                  todosCount={todos.length}
+                  onToggleAll={handleToggleAll}
+                />
+              )}
 
-        {shouldShowList && (
-          <section className="todoapp__main" data-cy="TodoList">
-            {filteredTodos.map(todo => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onDelete={handleDeleteTodo}
-                onStatusChange={handleStatusChange}
-                onRename={handleRenameTodo}
-                isLoading={processingTodos.includes(todo.id)}
+              <NewTodoForm
+                onCreate={handleAddTodo}
+                fieldRef={newTodoFieldRef}
+                disabled={processingTodos.includes(0)}
               />
-            ))}
-            {tempTodo && (
-              <TodoItem
-                key={tempTodo.id}
-                todo={tempTodo}
-                onDelete={() => {}}
-                onStatusChange={() => { }}
-                onRename={async () => {}}
-                isLoading={true}
+            </header>
+
+            {shouldShowList && (
+              <section className="todoapp__main" data-cy="TodoList">
+                {filteredTodos.map(todo => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onDelete={handleDeleteTodo}
+                    onStatusChange={handleStatusChange}
+                    onRename={handleRenameTodo}
+                    isLoading={processingTodos.includes(todo.id)}
+                  />
+                ))}
+                {tempTodo && (
+                  <TodoItem
+                    key={tempTodo.id}
+                    todo={tempTodo}
+                    onDelete={() => {}}
+                    onStatusChange={() => {}}
+                    onRename={async () => {}}
+                    isLoading={true}
+                  />
+                )}
+              </section>
+            )}
+
+            {shouldShowList && (
+              <Footer
+                activeTodosCount={activeTodosCount}
+                currentFilter={filter}
+                onFilterChange={handleFilterChange}
+                hasCompletedTodos={hasCompletedTodos}
+                onClearCompleted={handleClearCompleted}
               />
             )}
-          </section>
-        )}
-
-        {shouldShowList && (
-          <Footer
-            activeTodosCount={activeTodosCount}
-            currentFilter={filter}
-            onFilterChange={handleFilterChange}
-            hasCompletedTodos={hasCompletedTodos}
-            onClearCompleted={handleClearCompleted}
-          />
+          </>
         )}
       </div>
 

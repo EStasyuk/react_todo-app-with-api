@@ -72,36 +72,16 @@ export const TodoItem: React.FC<Props> = ({
 
   return (
     <div data-cy="Todo" className={`todo ${todo.completed ? 'completed' : ''}`}>
-      {!isEditing ? (
-        <>
-          <label className="todo__status-label">
-            <input
-              data-cy="TodoStatus"
-              type="checkbox"
-              className="todo__status"
-              checked={todo.completed}
-              onChange={handleStatusChange}
-            />
-          </label>
-
-          <span
-            data-cy="TodoTitle"
-            className="todo__title"
-            onDoubleClick={handleDoubleClick}
-          >
-            {todo.title}
-          </span>
-
-          <button
-            type="button"
-            className="todo__remove"
-            data-cy="TodoDelete"
-            onClick={handleDelete}
-          >
-            ×
-          </button>
-        </>
-      ) : (
+      <label className="todo__status-label">
+        <input
+          data-cy="TodoStatus"
+          type="checkbox"
+          className="todo__status"
+          checked={todo.completed}
+          onChange={handleStatusChange}
+        />
+      </label>
+      {isEditing ? (
         <input
           data-cy="TodoTitleField"
           type="text"
@@ -113,7 +93,24 @@ export const TodoItem: React.FC<Props> = ({
           onKeyUp={handleKeyDown}
           ref={editFieldRef}
         />
+      ) : (
+        <span
+          data-cy="TodoTitle"
+          className="todo__title"
+          onDoubleClick={handleDoubleClick}
+        >
+          {todo.title}
+        </span>
       )}
+
+      <button
+        type="button"
+        className="todo__remove"
+        data-cy="TodoDelete"
+        onClick={handleDelete}
+      >
+        ×
+      </button>
 
       <div
         data-cy="TodoLoader"
