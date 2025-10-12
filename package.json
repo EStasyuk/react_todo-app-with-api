@@ -1,6 +1,6 @@
 {
   "name": "react_todo-app-add-and-delete",
-  "homepage": "react_todo-app-add-and-delete",
+  "homepage": "https://EStasyuk.github.io/react_todo-app-with-api/",
   "version": "0.1.0",
   "keywords": [],
   "author": "Mate Academy",
@@ -56,7 +56,8 @@
     "update": "mate-scripts update",
     "postinstall": "npm run update && cypress verify",
     "predeploy": "npm run build",
-    "deploy": "mate-scripts deploy"
+    "deploy": "mate-scripts deploy",
+    "cy:open": "cypress open"
   },
   "browserslist": {
     "production": [
