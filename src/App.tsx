@@ -244,27 +244,29 @@ export const App: React.FC = () => {
     [handleUpdateTodo],
   );
 
-  const handleRenameTodo = useCallback(
-    async (todo: Todo, newTitle: string) => {
-      const trimmedTitle = newTitle.trim();
+  const handleUpdateTodo = useCallback(
+    async (
+      todo: Todo,
+      data: Partial<Todo>,
+      errorMessage: ErrorType,
+    ): Promise<void> => {
+      clearError();
+      setProcessingTodos(prev => [...prev, todo.id]);
 
-      if (trimmedTitle === todo.title) {
-        return;
+      try {
+        const updatedTodo = await updateTodo(todo.id, data);
+
+        setTodos(prevTodos =>
+          prevTodos.map(t => (t.id === updatedTodo.id ? updatedTodo : t)),
+        );
+      } catch (e) {
+        showError(errorMessage);
+        throw new Error(errorMessage);
+      } finally {
+        setProcessingTodos(prev => prev.filter(id => id !== todo.id));
       }
-
-      if (trimmedTitle === '') {
-        await handleDeleteTodo(todo.id, ErrorType.DeleteTodo);
-
-        return;
-      }
-
-      await handleUpdateTodo(
-        todo,
-        { title: trimmedTitle },
-        ErrorType.UpdateTodo,
-      );
     },
-    [handleUpdateTodo, handleDeleteTodo],
+    [showError, clearError],
   );
 
   const handleClearCompleted = useCallback(async () => {

@@ -53,7 +53,12 @@ export const TodoItem: React.FC<Props> = ({
     }
 
     if (trimmedTitle !== todo.title) {
-      await onRename(todo, trimmedTitle);
+      try {
+        await onRename(todo, trimmedTitle);
+        setIsEditing(false);
+      } catch (error) {}
+
+      return;
     }
 
     setIsEditing(false);
