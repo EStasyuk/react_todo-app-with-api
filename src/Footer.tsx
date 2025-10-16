@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Filter, FilterType } from './types/Todo';
 import classNames from 'classnames';
 
@@ -19,9 +19,9 @@ export const Footer: React.FC<Props> = ({
 }) => {
   const filters: Filter[] = Object.values(FilterType);
 
-  const handleClearCompleted = () => {
+  const handleClearCompleted = useCallback(() => {
     onClearCompleted();
-  };
+  }, [onClearCompleted]);
 
   return (
     <footer className="todoapp__footer" data-cy="Footer">

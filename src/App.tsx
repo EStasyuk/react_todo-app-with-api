@@ -39,9 +39,13 @@ export const App: React.FC = () => {
     }, 3000);
   }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError('');
-  };
+  }, [setError]);
+
+  const handleFilterChange = useCallback((newFilter: Filter) => {
+    setFilter(newFilter);
+  }, []);
 
   useEffect(() => {
     if (!USER_ID) {
@@ -57,14 +61,17 @@ export const App: React.FC = () => {
         showError(ErrorType.LoadTodos);
       } finally {
         setLoading(false);
+
+        setTimeout(() => {
+          newTodoFieldRef.current?.focus();
+        }, 0);
       }
     };
 
     loadTodos();
   }, [showError]);
-
   useEffect(() => {
-    if (newTodoFieldRef.current) {
+    if (!loading && newTodoFieldRef.current) {
       newTodoFieldRef.current.focus();
     }
   }, [loading]);
@@ -97,59 +104,12 @@ export const App: React.FC = () => {
   );
   const shouldShowList = todos.length > 0 || tempTodo !== null;
 
-  const handleToggleAll = useCallback(async () => {
-    clearError();
-    const newStatus = !isAllCompleted;
-
-    const todosToChange = todos.filter(todo => todo.completed !== newStatus);
-
-    if (todosToChange.length === 0) {
-      return;
-    }
-
-    setProcessingTodos(prev => [...prev, ...todosToChange.map(t => t.id)]);
-
-    const updatePromises = todosToChange.map(todo =>
-      updateTodo(todo.id, { completed: newStatus }),
-    );
-
-    try {
-      const results = await Promise.allSettled(updatePromises);
-
-      const successfulUpdates = results
-        .filter(r => r.status === 'fulfilled')
-        .map(r => (r as PromiseFulfilledResult<Todo>).value);
-
-      if (successfulUpdates.length < todosToChange.length) {
-        showError(ErrorType.UpdateTodo);
-      }
-
-      setTodos(prevTodos =>
-        prevTodos.map(todo => {
-          const successfulUpdate = successfulUpdates.find(
-            u => u.id === todo.id,
-          );
-
-          return successfulUpdate ? successfulUpdate : todo;
-        }),
-      );
-    } catch (e) {
-      showError(ErrorType.UpdateTodo);
-    } finally {
-      setProcessingTodos(prev =>
-        prev.filter(id => !todosToChange.map(t => t.id).includes(id)),
-      );
-
-      newTodoFieldRef.current?.focus();
-    }
-  }, [isAllCompleted, todos, showError, clearError]);
-
-  const handleFilterChange = useCallback((newFilter: Filter) => {
-    setFilter(newFilter);
-  }, []);
-
   const handleUpdateTodo = useCallback(
-    async (todo: Todo, data: Partial<Todo>, errorMessage: ErrorType) => {
+    async (
+      todo: Todo,
+      data: Partial<Todo>,
+      errorMessage: ErrorType,
+    ): Promise<Todo | null> => {
       clearError();
       setProcessingTodos(prev => [...prev, todo.id]);
 
@@ -172,6 +132,72 @@ export const App: React.FC = () => {
     [showError, clearError],
   );
 
+  const handleToggleAll = useCallback(async () => {
+    clearError();
+    const newStatus = !isAllCompleted;
+
+    const todosToChange = todos.filter(todo => todo.completed !== newStatus);
+
+    if (todosToChange.length === 0) {
+      return;
+    }
+
+    setProcessingTodos(prev => [...prev, ...todosToChange.map(t => t.id)]);
+
+    const updatePromises = todosToChange.map(todo =>
+      updateTodo(todo.id, { completed: newStatus })
+        .then(res => ({ id: res.id, success: true, todo: res }))
+        .catch(() => ({ id: todo.id, success: false })),
+    );
+
+    const results = await Promise.allSettled(updatePromises);
+
+    const successfulUpdates = results
+      .filter(r => r.status === 'fulfilled' && r.value.success)
+      .map(
+        r =>
+          (
+            r as PromiseFulfilledResult<{
+              id: number;
+              success: boolean;
+              todo: Todo;
+            }>
+          ).value.todo,
+      );
+
+    const failedUpdateIds = results
+      .filter(r => r.status === 'fulfilled' && !r.value.success)
+      .map(
+        r =>
+          (r as PromiseFulfilledResult<{ id: number; success: boolean }>).value
+            .id,
+      );
+
+    if (successfulUpdates.length < todosToChange.length) {
+      showError(ErrorType.UpdateTodo);
+    }
+
+    setTodos(prevTodos =>
+      prevTodos.map(todo => {
+        const updated = successfulUpdates.find(u => u.id === todo.id);
+
+        return updated ? updated : todo;
+      }),
+    );
+
+    setProcessingTodos(prev =>
+      prev.filter(
+        id =>
+          !todosToChange.map(t => t.id).includes(id) ||
+          failedUpdateIds.includes(id),
+      ),
+    );
+
+    setTimeout(() => {
+      newTodoFieldRef.current?.focus();
+    }, 0);
+  }, [isAllCompleted, todos, showError, clearError, handleUpdateTodo]); // Додано handleUpdateTodo у залежності
+
   const handleAddTodo = useCallback(
     async (title: string) => {
       clearError();
@@ -180,7 +206,7 @@ export const App: React.FC = () => {
       if (trimmedTitle === '') {
         showError(ErrorType.TitleEmpty);
 
-        return;
+        return false;
       }
 
       setTempTodo({
@@ -203,9 +229,7 @@ export const App: React.FC = () => {
         return false;
       } finally {
         setTempTodo(null);
-
         setProcessingTodos(prev => prev.filter(id => id !== 0));
-
         setTimeout(() => {
           newTodoFieldRef.current?.focus();
         }, 0);
@@ -215,22 +239,30 @@ export const App: React.FC = () => {
   );
 
   const handleDeleteTodo = useCallback(
-    async (todoId: number, errorMessage: ErrorType = ErrorType.DeleteTodo) => {
+    async (
+      todoId: number,
+      errorMessage: ErrorType = ErrorType.DeleteTodo,
+    ): Promise<boolean> => {
       clearError();
       setProcessingTodos(prev => [...prev, todoId]);
 
       try {
         await deleteTodo(todoId);
         setTodos(prevTodos => prevTodos.filter(todo => todo.id !== todoId));
+
+        return true;
       } catch (e) {
         showError(errorMessage);
+
+        return false;
       } finally {
         setProcessingTodos(prev => prev.filter(id => id !== todoId));
-
-        newTodoFieldRef.current?.focus();
+        setTimeout(() => {
+          newTodoFieldRef.current?.focus();
+        }, 0);
       }
     },
-    [showError, clearError],
+    [showError, clearError, newTodoFieldRef],
   );
 
   const handleStatusChange = useCallback(
@@ -244,29 +276,27 @@ export const App: React.FC = () => {
     [handleUpdateTodo],
   );
 
-  const handleUpdateTodo = useCallback(
-    async (
-      todo: Todo,
-      data: Partial<Todo>,
-      errorMessage: ErrorType,
-    ): Promise<void> => {
-      clearError();
-      setProcessingTodos(prev => [...prev, todo.id]);
+  const handleRenameTodo = useCallback(
+    async (todo: Todo, newTitle: string): Promise<boolean> => {
+      const trimmedTitle = newTitle.trim();
 
-      try {
-        const updatedTodo = await updateTodo(todo.id, data);
-
-        setTodos(prevTodos =>
-          prevTodos.map(t => (t.id === updatedTodo.id ? updatedTodo : t)),
-        );
-      } catch (e) {
-        showError(errorMessage);
-        throw new Error(errorMessage);
-      } finally {
-        setProcessingTodos(prev => prev.filter(id => id !== todo.id));
+      if (trimmedTitle === todo.title) {
+        return true;
       }
+
+      if (trimmedTitle === '') {
+        return handleDeleteTodo(todo.id, ErrorType.DeleteTodo);
+      }
+
+      const updatedTodo = await handleUpdateTodo(
+        todo,
+        { title: trimmedTitle },
+        ErrorType.UpdateTodo,
+      );
+
+      return updatedTodo !== null;
     },
-    [showError, clearError],
+    [handleUpdateTodo, handleDeleteTodo],
   );
 
   const handleClearCompleted = useCallback(async () => {
@@ -285,26 +315,32 @@ export const App: React.FC = () => {
 
         return { id: todo.id, success: true };
       } catch (e) {
-        showError('Unable to delete a todo');
+        showError(ErrorType.DeleteTodo);
 
         return { id: todo.id, success: false };
       }
     });
 
-    const results = await Promise.all(deletionPromises);
+    const results = await Promise.allSettled(deletionPromises);
 
-    const successfulIds = results.filter(res => res.success).map(res => res.id);
+    const successfulIds = results
+      .filter(r => r.status === 'fulfilled' && r.value.success)
+      .map(
+        r =>
+          (r as PromiseFulfilledResult<{ id: number; success: boolean }>).value
+            .id,
+      );
 
     setProcessingTodos(prev => prev.filter(id => !successfulIds.includes(id)));
 
     setTodos(prevTodos =>
-      prevTodos.filter(
-        todo => !results.some(res => res.id === todo.id && res.success),
-      ),
+      prevTodos.filter(todo => !successfulIds.includes(todo.id)),
     );
 
-    newTodoFieldRef.current?.focus();
-  }, [todos, showError, clearError]);
+    setTimeout(() => {
+      newTodoFieldRef.current?.focus();
+    }, 0);
+  }, [todos, showError, clearError, handleDeleteTodo]);
 
   if (!USER_ID) {
     return <UserWarning />;

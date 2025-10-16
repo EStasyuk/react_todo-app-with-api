@@ -6,9 +6,9 @@ import classNames from 'classnames';
 
 type Props = {
   todo: Todo;
-  onDelete: (todoId: number, errorMessage?: string) => void;
+  onDelete: (todoId: number, errorMessage?: string) => Promise<boolean>;
   onStatusChange: (todo: Todo) => void;
-  onRename: (todo: Todo, newTitle: string) => Promise<void>;
+  onRename: (todo: Todo, newTitle: string) => Promise<boolean>;
   isLoading: boolean;
 };
 
@@ -46,22 +46,30 @@ export const TodoItem: React.FC<Props> = ({
     const trimmedTitle = newTitle.trim();
 
     if (trimmedTitle === '') {
-      onDelete(todo.id);
-      setIsEditing(false);
-
-      return;
-    }
-
-    if (trimmedTitle !== todo.title) {
       try {
-        await onRename(todo, trimmedTitle);
-        setIsEditing(false);
+        const isSuccessful = await onDelete(todo.id);
+
+        if (isSuccessful) {
+          setIsEditing(false);
+        }
       } catch (error) {}
 
       return;
     }
 
-    setIsEditing(false);
+    if (trimmedTitle === todo.title) {
+      setIsEditing(false);
+
+      return;
+    }
+
+    try {
+      const isSuccessful = await onRename(todo, trimmedTitle);
+
+      if (isSuccessful) {
+        setIsEditing(false);
+      }
+    } catch (error) {}
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -95,7 +103,7 @@ export const TodoItem: React.FC<Props> = ({
           value={newTitle}
           onChange={e => setNewTitle(e.target.value)}
           onBlur={handleSave}
-          onKeyUp={handleKeyDown}
+          onKeyDown={handleKeyDown}
           ref={editFieldRef}
         />
       ) : (
