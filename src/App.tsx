@@ -153,11 +153,14 @@ export const App: React.FC = () => {
     const results = await Promise.allSettled(updatePromises);
 
     const successfulUpdates = results
-      .filter(r => r.status === 'fulfilled' && r.value.success)
+      .filter(
+        updateResult =>
+          updateResult.status === 'fulfilled' && updateResult.value.success,
+      )
       .map(
-        r =>
+        updateResult =>
           (
-            r as PromiseFulfilledResult<{
+            updateResult as PromiseFulfilledResult<{
               id: number;
               success: boolean;
               todo: Todo;
@@ -166,11 +169,18 @@ export const App: React.FC = () => {
       );
 
     const failedUpdateIds = results
-      .filter(r => r.status === 'fulfilled' && !r.value.success)
+      .filter(
+        updateResult =>
+          updateResult.status === 'fulfilled' && !updateResult.value.success,
+      )
       .map(
-        r =>
-          (r as PromiseFulfilledResult<{ id: number; success: boolean }>).value
-            .id,
+        updateResult =>
+          (
+            updateResult as PromiseFulfilledResult<{
+              id: number;
+              success: boolean;
+            }>
+          ).value.id,
       );
 
     if (successfulUpdates.length < todosToChange.length) {
@@ -196,7 +206,7 @@ export const App: React.FC = () => {
     setTimeout(() => {
       newTodoFieldRef.current?.focus();
     }, 0);
-  }, [isAllCompleted, todos, showError, clearError, handleUpdateTodo]); // Додано handleUpdateTodo у залежності
+  }, [isAllCompleted, todos, showError, clearError]);
 
   const handleAddTodo = useCallback(
     async (title: string) => {
@@ -340,7 +350,7 @@ export const App: React.FC = () => {
     setTimeout(() => {
       newTodoFieldRef.current?.focus();
     }, 0);
-  }, [todos, showError, clearError, handleDeleteTodo]);
+  }, [todos, showError, clearError]);
 
   if (!USER_ID) {
     return <UserWarning />;
